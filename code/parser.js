@@ -40,31 +40,19 @@ function scheduleHtmlParser(html) {
     const parsePosition = text => {
         if (!text) return ''
         text = cleanText(text)
-        
         // 处理体育课场地格式 - 移除[xx-xx]格式的编号和"节"字
         text = text.replace(/\[\d{2}-\d{2}\]/g, '')
                   .replace(/节/g, '')
                   .trim()
         
-        // 处理特殊教室格式
-        const patterns = [
-            /信息交通\d+-\d+/,
-            /公共\d+-\d+/,
-            /实验室\d+/,
-            /\d+号楼\d+/,
-            /[\u4e00-\u9fa5]+\d+体\d+.*?(?=\[|$)/, // 匹配任何校区的体育场地
-            /[\u4e00-\u9fa5]+.*?场\d*/, // 匹配任何校区的球场等场地
-            /体育场\d*/, // 匹配普通体育场
-            /游泳馆\d*/, // 匹配游泳馆
-            /体育馆\d*/ // 匹配体育馆
-        ]
-        
-        for (const pattern of patterns) {
-            const match = text.match(pattern)
-            if (match) return match[0]
+        // 分割字符串，最多分割2次
+        const parts = text.split('-', 2)
+        if (parts.length >= 2) {
+            // 如果有至少一个'-'，返回前两部分的组合
+            return parts.join('-')
         }
         
-        
+        // 如果没有'-'，返回原始文本
         return text
     }
 
@@ -94,7 +82,7 @@ function scheduleHtmlParser(html) {
                 position: '',
                 teacher: '',
                 weeks: [],
-                day: day + 1, 
+                day: day + 1, // 改为day+1，因为外部传入的day是0-based
                 sections: sections
             }
 
@@ -143,11 +131,12 @@ function scheduleHtmlParser(html) {
         return courses
     }
 
-    // 遍历课表 - 修改此处处理逻辑
+    // 遍历课表
     $('table tr').slice(1).each(function(rowIndex) {
         const sections = getSections(rowIndex)
         if (sections.length === 0) return
 
+       
         $(this).find('td').each(function(colIndex) {
             // 跳过表头行和超出星期范围的列
             if (colIndex > 6) return
